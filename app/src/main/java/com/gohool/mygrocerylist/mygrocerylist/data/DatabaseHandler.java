@@ -1,12 +1,17 @@
 package com.gohool.mygrocerylist.mygrocerylist.data;
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.gohool.mygrocerylist.mygrocerylist.model.Grocery;
 import com.gohool.mygrocerylist.mygrocerylist.util.Constants;
 
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.List;
 
 public class DatabaseHandler extends SQLiteOpenHelper {
@@ -41,12 +46,40 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     // Add Grocery
     public void addGrocery(Grocery grocery) {
+        SQLiteDatabase db = this.getWritableDatabase();
 
+        ContentValues values = new ContentValues();
+        values.put(Constants.KEY_GROCERY_ITEM, grocery.getName());
+        values.put(Constants.KEY_QTY_NUMBER, grocery.getQuantity());
+        values.put(Constants.KEY_DATE_NAME, System.currentTimeMillis());
+
+        db.insert(Constants.TABLE_NAME, null, values);
+        Log.d("Saved!!!", "Saved to DB");
     }
 
     // Get a grocery
     public Grocery getGrocery(int id) {
-        return null;
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        Cursor cursor = db.query(Constants.TABLE_NAME,
+                new String[] {Constants.KEY_ID, Constants.KEY_GROCERY_ITEM, Constants.KEY_QTY_NUMBER, Constants.KEY_DATE_NAME},
+                Constants.KEY_ID + "=?",
+                new String[]{String.valueOf(id)},
+                null, null, null, null);
+
+        if (cursor != null)
+            cursor.moveToFirst();
+
+        Grocery grocery = new Grocery();
+        grocery.setId(Integer.parseInt(cursor.getString(cursor.getColumnIndex(Constants.KEY_ID))));
+        grocery.setName(cursor.getString(cursor.getColumnIndex(Constants.KEY_GROCERY_ITEM)));
+        grocery.setQuantity(cursor.getString(cursor.getColumnIndex(Constants.KEY_QTY_NUMBER)));
+
+        DateFormat dateFormat = DateFormat.getInstance();
+        String formattedDate = dateFormat.format(new Date(cursor.getLong(cursor.getColumnIndex(Constants.KEY_DATE_NAME))).getTime());
+        grocery.setDateItemAdded(formattedDate);
+
+        return grocery;
     }
 
     // Get all groceries
