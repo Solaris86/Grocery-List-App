@@ -1,11 +1,14 @@
 package com.gohool.mygrocerylist.mygrocerylist.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -13,6 +16,8 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.gohool.mygrocerylist.mygrocerylist.R;
+import com.gohool.mygrocerylist.mygrocerylist.data.DatabaseHandler;
+import com.gohool.mygrocerylist.mygrocerylist.model.Grocery;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -21,11 +26,17 @@ public class MainActivity extends AppCompatActivity {
     private EditText groceryItem;
     private EditText quantity;
     private Button saveButton;
+    private DatabaseHandler db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        db = new DatabaseHandler(this);
+
+        byPassActivity();
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -80,12 +91,40 @@ public class MainActivity extends AppCompatActivity {
                 // Todo: Save to db
                 // Todo: Go to next screen
 
-                saveGroceryToDb(v);
+                if (!groceryItem.getText().toString().isEmpty() && !quantity.getText().toString().isEmpty()) {
+                    saveGroceryToDb(v);
+                }
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        startActivity(new Intent(MainActivity.this, ListActivity.class));
+                    }
+                }, 1200);
             }
         });
     }
 
     private void saveGroceryToDb(View v) {
+        Grocery grocery = new Grocery();
 
+        String newGrocery = groceryItem.getText().toString();
+        String newGroceryQuantity = quantity.getText().toString();
+
+        grocery.setName(newGrocery);
+        grocery.setQuantity(newGroceryQuantity);
+
+        db.addGrocery(grocery);
+
+        Snackbar.make(v, "Item Saved!", Snackbar.LENGTH_LONG).show();
+
+        Log.d("Item Added ID:", String.valueOf(db.getGroceryCount()));
+    }
+
+    public void byPassActivity() {
+        if (db.getGroceryCount() > 0) {
+            startActivity(new Intent(MainActivity.this, ListActivity.class));
+            finish();
+        }
     }
 }
